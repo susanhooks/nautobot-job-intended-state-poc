@@ -19,7 +19,7 @@ class IntendedState(Job):
         intended_state = json.loads(json_payload)
         for object_name, object_data in intended_state.items():
             object_class = get_model_from_name(object_name)
-            object_class.objects.update_or_create(**object_data)
+            object_class.objects.update_or_create(object_data)
 
 
 jobs = [IntendedState]
