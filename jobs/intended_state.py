@@ -20,7 +20,7 @@ class IntendedState(Job):
         for object_name, objects in intended_state.items():
             object_class = get_model_from_name(object_name)
             for object_data in objects:
-                object_class.objects.update_or_create(**object_data)
-
+                obj, created = object_class.objects.update_or_create(**object_data)
+                self.log_success(obj=obj, message=f"Object {obj} has been {'created' if created else 'updated'}.")
 
 jobs = [IntendedState]
