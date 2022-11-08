@@ -2,6 +2,7 @@ import json
 import re
 
 from django.apps import apps
+from django.core.exceptions import FieldError, ObjectDoesNotExist
 
 from nautobot.extras.jobs import Job, TextVar
 
@@ -31,10 +32,17 @@ class IntendedState(Job):
         for object_name, objects in intended_state.items():
             object_class = apps.get_model(object_name)
             for object_data in objects:
-                for key, value in object_data.items():
+                for key, value in object_data.items():   
                     if value.startswith("#ref"):
-                        object_data[key] = replace_ref(value)
-                obj, created = object_class.objects.update_or_create(**object_data)
+                        try:
+                            object_data[key] = replace_ref(value)
+                        except AttributeError as e:
+                            self.log_warning(message=f"Error on key {key}. Error: {e}.")
+                            continue
+                try:        
+                    obj, created = object_class.objects.update_or_create(**object_data)
+                except (FieldError, ObjectDoesNotExist) as e:
+                    self.log_warning(message=f"Unable to create object. Error: {e}.")    
                 self.log_success(obj=obj, message=f"Object {obj} has been {'created' if created else 'updated'}.")
 
 jobs = [IntendedState]
