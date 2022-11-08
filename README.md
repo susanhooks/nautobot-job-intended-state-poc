@@ -8,7 +8,7 @@ This POC exists solely to present an alternative solution to creating or updatin
 
 ## Requirements
 
-Nautobot v1.3+
+[Nautobot](https://github.com/nautobot/nautobot)
 
 ## How to Use (as-is)
 
@@ -45,12 +45,79 @@ This payload must be sent as a string that will be serialized. Here is an exampl
 }
 ```
 
+### References to Other Models
+
+Some item fields are foreign key relationships to other instances. In those cases, you will need to look up the object before trying to use it. For this, I have added a simple colon separated string pattern to replace a value that is a reference with an object instance. You will need to format the reference string as such: `#ref:dcim.site:name:Site 1`
+
+Elements of the reference string:
+- `#ref`: must start the string; this denotes that this is a reference to a model instance
+- `dcim.site`: the app and model name
+- `name`: the identifying field name to query to get the object (i.e. name, slug, model, etc.)
+- `Site 1`: the value of the field that uniquely identifies an object
+
+### Example
+
+Here is an example of a working (albeit rudimentary) example in python:
+
+```python
+import json
+import requests
+
+url = "https://nautobot.example.com"
+
+token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+headers = {"Authorization": f"Token {token}"}
+
+json_payload = {
+    "dcim.manufacturer": [
+        {"name": "Manufacturer 1"},
+        {"name": "Manufacturer 2"},
+    ],
+    "dcim.devicetype": [
+        {
+            "model": "Model 1",
+            "manufacturer": "#ref:dcim.manufacturer:name:Manufacturer 1",
+        },
+        {
+            "model": "Model 2",
+            "manufacturer": "#ref:dcim.manufacturer:name:Manufacturer 2",
+        },
+    ],
+    "dcim.devicerole": [
+        {"name": "Role 1"},
+        {"name": "Role 2"},
+    ],
+    "dcim.site": [
+        {"name": "Site 1", "status": "#ref:extras.status:slug:active"},
+        {"name": "Site 2", "status": "#ref:extras.status:slug:active"},
+    ],
+    "dcim.device": [
+        {
+            "name": "Device 1",
+            "device_role": "#ref:dcim.devicerole:name:Role 1",
+            "device_type": "#ref:dcim.devicetype:model:Model 1",
+            "site": "#ref:dcim.site:name:Site 1",
+        },
+        {
+            "name": "Device 2",
+            "device_role": "#ref:dcim.devicerole:name:Role 2",
+            "device_type": "#ref:dcim.devicetype:model:Model 2",
+            "site": "#ref:dcim.site:name:Site 2",
+        },
+    ],
+}
+
+payload = {"data": {"json_payload": json.dumps(json_payload)}}
+
+requests.post(f"{url}/api/extras/jobs/git.poc-jobs/intended_state/IntendedState/run/", headers=headers, json=payload)
+```
+
 ## Limitations
 
 Note, this repo is not meant to be a perfect representation of how to implement this, but rather just a simple POC on how it _could_ be done. There are many considerations that this Job does not take into account, such as:
 
 - Some objects are required to exist before others, so they must be sent in earlier in the payload
-- Some fields need to be a UUID of an existing object instead of a name or slug
 - There are no try/except blocks for catching errors
 
 ## Future
