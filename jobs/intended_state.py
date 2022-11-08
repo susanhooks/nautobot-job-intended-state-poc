@@ -2,7 +2,7 @@ import json
 import re
 
 from django.apps import apps
-from django.core.exceptions import FieldError, ObjectDoesNotExist
+from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 
 from nautobot.extras.jobs import Job, TextVar
 
@@ -36,7 +36,7 @@ class IntendedState(Job):
                     if value.startswith("#ref"):
                         try:
                             object_data[key] = replace_ref(value)
-                        except (AttributeError, ObjectDoesNotExist) as e:
+                        except (AttributeError, ObjectDoesNotExist, ValidationError) as e:
                             self.log_warning(message=f"Error on key {key}. Error: {e}.")
                             continue
                 try:        
