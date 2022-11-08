@@ -36,7 +36,7 @@ class IntendedState(Job):
                     if value.startswith("#ref"):
                         try:
                             object_data[key] = replace_ref(value)
-                        except AttributeError as e:
+                        except (AttributeError, ObjectDoesNotExist) as e:
                             self.log_warning(message=f"Error on key {key}. Error: {e}.")
                             continue
                 try:        
