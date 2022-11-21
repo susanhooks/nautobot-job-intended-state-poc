@@ -23,7 +23,7 @@ class IntendedState(Job):
     json_payload = TextVar()
 
     class Meta:
-        name = "Intended State Job POC"
+        name = "Intended State Job"
         description = "Create or update objects in Nautobot by passing in an intended state JSON payload."
 
     def run(self, data, commit):
@@ -37,8 +37,8 @@ class IntendedState(Job):
                         try:
                             object_data[key] = replace_ref(value)
                         except (AttributeError, ObjectDoesNotExist, ValidationError) as e:
-                            self.log_warning(message=f"Error on key {key}. Error: {e}.")
-                            continue
+                            self.log_warning(message=f"Error on key '{key}'. Error: {e}.")
+                        continue
                 try:        
                     obj, created = object_class.objects.update_or_create(**object_data)
                 except (FieldError, ObjectDoesNotExist) as e:
