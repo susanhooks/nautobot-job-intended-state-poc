@@ -1,5 +1,4 @@
 import json
-import re
 
 from django.apps import apps
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
@@ -8,14 +7,15 @@ from nautobot.extras.jobs import Job, TextVar
 
 name = "POC Jobs"
 
-
-def replace_ref(ref):
-    pattern = r"^#ref:(?P<app>.*):(?P<field>.*):(?P<value>.*)$"
-    groups = re.match(pattern, ref)
-    app_name = groups.group("app")
-    obj_lookup = {groups.group("field"): groups.group("value")}
+def replace_ref_new(ref):
+    ref_split = ref.split(":")
+    ref_split.pop(0)
+    app_name = ref_split.pop(0)
     object_class = apps.get_model(app_name)
-    return object_class.objects.get(**obj_lookup)
+    fields = [k for k in ref_split[::2]]
+    values = [k for k in ref_split[1::2]]
+    filters = {fields[i]: values[i] for i in range (len(values))}
+    return object_class.get(**filters)
 
 
 class IntendedState(Job):
@@ -35,7 +35,7 @@ class IntendedState(Job):
                 for key, value in object_data.items():   
                     if value.startswith("#ref"):
                         try:
-                            object_data[key] = replace_ref(value)
+                            object_data[key] = replace_ref_new(value)
                         except (AttributeError, ObjectDoesNotExist, ValidationError) as e:
                             self.log_warning(message=f"Error on key '{key}'. Error: {e}.")
                         continue
