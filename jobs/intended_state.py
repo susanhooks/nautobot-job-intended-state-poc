@@ -15,7 +15,7 @@ def replace_ref_new(ref):
     fields = [k for k in ref_split[::2]]
     values = [k for k in ref_split[1::2]]
     filters = {fields[i]: values[i] for i in range (len(values))}
-    return object_class.get(**filters)
+    return object_class.objects.get(**filters)
 
 
 class IntendedState(Job):
