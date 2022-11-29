@@ -42,7 +42,8 @@ class IntendedState(Job):
                 try:        
                     obj, created = object_class.objects.update_or_create(**object_data)
                 except (FieldError, ObjectDoesNotExist) as e:
-                    self.log_warning(message=f"Unable to create object. Error: {e}.")    
+                    self.log_warning(message=f"Unable to create object. Error: {e}.")
+                    continue
                 self.log_success(obj=obj, message=f"Object {obj} has been {'created' if created else 'updated'}.")
 
 jobs = [IntendedState]
