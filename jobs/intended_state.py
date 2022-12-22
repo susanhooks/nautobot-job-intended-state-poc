@@ -1,5 +1,4 @@
 import json
-import re
 
 from django.apps import apps
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
@@ -10,11 +9,29 @@ name = "POC Jobs"
 
 
 def replace_ref(ref):
-    pattern = r"^#ref:(?P<app>.*):(?P<field>.*):(?P<value>.*)$"
-    groups = re.match(pattern, ref)
-    app_name = groups.group("app")
-    obj_lookup = {groups.group("field"): groups.group("value")}
+    """Recursively replace references."""
+    if isinstance(ref, dict):
+        for key, value in ref.items():
+            ref[key] = replace_ref(value)
+        return ref
+
+    if isinstance(ref, (list, set, tuple)):
+        return [replace_ref(r) for r in ref]
+
+    if not isinstance(ref, (str, bytes)):
+        return ref
+
+    ref_split = ref.split(":")
+    # pop off #ref
+    ref_split.pop(0)
+    # Grab the app.model
+    app_name = ref_split.pop(0)
     object_class = apps.get_model(app_name)
+    # Get every other item in the list for fields
+    fields = [f for f in ref_split[::2]]
+    # and for values start at index 1
+    values = [v for v in ref_split[1::2]]
+    obj_lookup = {fields[i]: values[i] for i in range(len(fields))}
     return object_class.objects.get(**obj_lookup)
 
 
@@ -32,18 +49,19 @@ class IntendedState(Job):
         for object_name, objects in intended_state.items():
             object_class = apps.get_model(object_name)
             for object_data in objects:
-                for key, value in object_data.items():   
+                for key, value in object_data.items():
                     if value.startswith("#ref"):
                         try:
                             object_data[key] = replace_ref(value)
                         except (AttributeError, ObjectDoesNotExist, ValidationError) as e:
                             self.log_warning(message=f"Error on key {key}. Error: {e}.")
                             continue
-                try:        
+                try:
                     obj, created = object_class.objects.update_or_create(**object_data)
                 except (FieldError, ObjectDoesNotExist) as e:
                     self.log_warning(message=f"Unable to create object. Error: {e}.")
                     continue
                 self.log_success(obj=obj, message=f"Object {obj} has been {'created' if created else 'updated'}.")
+
 
 jobs = [IntendedState]
