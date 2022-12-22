@@ -21,7 +21,7 @@ def replace_ref(ref):
     if not isinstance(ref, (str, bytes)):
         return ref
 
-    if not value.startswith("#ref"):
+    if not ref.startswith("#ref"):
         return ref
 
     ref_split = ref.split(":")
