@@ -21,6 +21,9 @@ def replace_ref(ref):
     if not isinstance(ref, (str, bytes)):
         return ref
 
+    if not value.startswith("#ref"):
+        return ref
+
     ref_split = ref.split(":")
     # pop off #ref
     ref_split.pop(0)
@@ -50,12 +53,11 @@ class IntendedState(Job):
             object_class = apps.get_model(object_name)
             for object_data in objects:
                 for key, value in object_data.items():
-                    if value.startswith("#ref"):
-                        try:
-                            object_data[key] = replace_ref(value)
-                        except (AttributeError, ObjectDoesNotExist, ValidationError) as e:
-                            self.log_warning(message=f"Error on key {key}. Error: {e}.")
-                            continue
+                    try:
+                        object_data[key] = replace_ref(value)
+                    except (AttributeError, ObjectDoesNotExist, ValidationError) as e:
+                        self.log_warning(message=f"Error on key {key}. Error: {e}.")
+                        continue
                 try:
                     obj, created = object_class.objects.update_or_create(**object_data)
                 except (FieldError, ObjectDoesNotExist) as e:
