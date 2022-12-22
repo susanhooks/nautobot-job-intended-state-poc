@@ -47,13 +47,15 @@ This payload must be sent as a string that will be serialized. Here is an exampl
 
 ### References to Other Models
 
-Some item fields are foreign key relationships to other instances. In those cases, you will need to look up the object before trying to use it. For this, I have added a simple colon separated string pattern to replace a value that is a reference with an object instance. You will need to format the reference string as such: `#ref:dcim.site:name:Site 1`
+Some item fields are foreign key relationships to other instances. In those cases, you will need to look up the object before trying to use it. For this, I have added a simple colon separated string pattern to replace a value that is a reference with an object instance. You will need to format the reference string as such: `#ref:dcim.site:name:Site 1[:field_2:value_2:...]`
 
 Elements of the reference string:
 - `#ref`: must start the string; this denotes that this is a reference to a model instance
 - `dcim.site`: the app and model name
 - `name`: the identifying field name to query to get the object (i.e. name, slug, model, etc.)
 - `Site 1`: the value of the field that uniquely identifies an object
+- `field_2` (optional): additional identifying field
+- `value_2` (optional): value for `field_2`
 
 ### Example
 
